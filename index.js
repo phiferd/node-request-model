@@ -2,7 +2,7 @@
 /*!
  * node-request-model
  * Copyright(c) 2020 Dan Phifer
- * MIT Licensed
+ * ISC Licensed
  */
 
 'use strict';

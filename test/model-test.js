@@ -1,34 +1,9 @@
 const assert = require('assert');
 const model = require('../index');
 
-const buildSpy = (method) => {
-  const state = {calls: 0};
-  return {
-    get calls() {
-      return state.calls;
-    },
-    [method]: () => {
-      state.calls++;
-    }
-  }
-}
-
-const response = () => {
-  const state = {code: 0};
-  return {
-    get code() {
-      return state.code;
-    },
-    status: (code) => {
-      state.code = code;
-      return {send: () => {}}
-    }
-  }
-}
-
 describe('model', function () {
   it('should parse parameters', function () {
-    runTest({
+    expectModel({
         customer: 'string',
         points: {type: 'int', default: 10},
         subscriber: 'bool',
@@ -64,7 +39,7 @@ describe('model', function () {
   });
 
   it('uses defaults', function () {
-    runTest({
+    expectModel({
       x: {type: 'int', default: 10}
     },
       {
@@ -75,7 +50,7 @@ describe('model', function () {
   });
 
   it('reads in priority order', function () {
-    runTest({
+    expectModel({
         x: 'string',
         y: 'string',
         z: 'string'
@@ -93,7 +68,7 @@ describe('model', function () {
   });
 
   it('reads from sources', function () {
-    runTest({
+    expectModel({
         x: {type: 'string', sources: ['body']},
         y: 'string',
         z: 'string'
@@ -112,7 +87,7 @@ describe('model', function () {
 
 
   it('reads objects', function () {
-    runTest(
+    expectModel(
       { x: {type: 'object'}},
       {body: {x: {a: 1, b: 2, c: 3}}},
       {x: {a: 1, b: 2, c: 3}}
@@ -120,10 +95,19 @@ describe('model', function () {
   });
 
   it('allows valid enum values', function () {
-    runTest(
+    expectModel(
       { food: {type: 'string', enum: ['pizza', 'hamburger', 'steak']}},
       {body: {food: 'pizza'}},
       {food: 'pizza'}
+    )
+  });
+
+  it('should allow the model property to be overridden', function () {
+    expectModel(
+      { food: 'string'},
+      {body: {food: 'pizza'}},
+      {food: 'pizza'},
+      "dataObj"
     )
   });
 
@@ -135,7 +119,7 @@ describe('model', function () {
   });
 
   it('converts names', function () {
-    runTest(
+    expectModel(
       { food: {type: 'string', name: "food_choice"}},
       {body: {food_choice: 'pizza'}},
       {food: 'pizza'}
@@ -143,22 +127,30 @@ describe('model', function () {
   });
 
   function expectError(definition, req) {
-    runTest(definition, req, {}, 0, 400);
+    const middleware = model(definition);
+
+    let statusCode = -1;
+    const res = {
+      status: (code) => {
+        statusCode = code;
+        return {send: () => {}}
+      }
+    };
+
+    let nextCalls = 0;
+    middleware(req, res, () => nextCalls++);
+
+    assert.strictEqual(nextCalls, 0, `Next should NOT be called when validation fails`);
+    assert.strictEqual(statusCode, 400, "Request should have been rejected with status code 400");
   }
 
-  function runTest(definition, req, expectedResult, nextCalls=1, status=200) {
-    const middleware = model(definition);
-    const res = response();
-    const spy = buildSpy('next');
+  function expectModel(definition, req, expectedModel, modelProp="model") {
+    const middleware = model(definition, modelProp);
 
-    middleware(req, res, spy.next);
+    let nextCalls = 0;
+    middleware(req, {}, () => nextCalls++);
 
-    if (status >= 200 && status < 300) {
-      assert.strictEqual(spy.calls, nextCalls, `Next should have been called ${nextCalls} time, got ${spy.calls}`);
-      assert.deepStrictEqual(req.model, expectedResult, `Expected req.model did not match actual`);
-    }
-    else {
-      assert.strictEqual(res.code, status, "Validation error should have been thrown");
-    }
+    assert.strictEqual(nextCalls, 1, `Next should have been called once, got ${nextCalls}`);
+    assert.deepStrictEqual(req[modelProp], expectedModel, `Expected req.model did not match actual`);
   }
 });

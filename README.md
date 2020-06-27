@@ -11,6 +11,11 @@ type conversion.  Also, it creates an easy-to-read description of what is expect
 ## Usage
 
 ```javascript
+const model = require('node-request-model');
+
+
+...
+
 
 // Models are declared as middleware. They can be added to any route (GET, POST, etc...) and
 // the results will be stored in the req.model variable by default. 
