@@ -6,7 +6,7 @@ type conversion.  Also, it creates an easy-to-read description of what is expect
 
 ## install
 
-`npm install -save node-request-model`
+`npm install --save node-request-model`
 
 ## Usage
 
