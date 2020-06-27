@@ -151,6 +151,6 @@ describe('model', function () {
     middleware(req, {}, () => nextCalls++);
 
     assert.strictEqual(nextCalls, 1, `Next should have been called once, got ${nextCalls}`);
-    assert.deepStrictEqual(req[modelProp], expectedModel, `Expected req.model did not match actual`);
+    assert.deepStrictEqual(req[modelProp], expectedModel, `Expected req.${modelProp} did not match actual`);
   }
 });
