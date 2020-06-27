@@ -48,6 +48,32 @@ describe('model', function () {
       .expect({x: 10})
   });
 
+  it('converts booleans', function () {
+    withModel({
+      b1: 'bool',
+      b2: 'bool',
+      b3: 'bool',
+      b4: 'bool',
+      b5: 'bool'
+    })
+      .request({
+        query: {
+          b1: '1',
+          b2: 1,
+          b3: 'true',
+          b4: true,
+          b5: 'something else'
+        }
+      })
+      .expect({
+        b1: true,
+        b2: true,
+        b3: true,
+        b4: true,
+        b5: false
+      })
+  });
+
   it('reads in priority order', function () {
     withModel({
       x: 'string',
@@ -101,8 +127,8 @@ describe('model', function () {
 
   it('allows valid enum values', function () {
     withModel({
-        food: {type: 'string', enum: ['pizza', 'hamburger', 'steak']}
-      })
+      food: {type: 'string', enum: ['pizza', 'hamburger', 'steak']}
+    })
       .request({body: {food: 'pizza'}})
       .expect({food: 'pizza'})
   });
