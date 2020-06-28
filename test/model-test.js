@@ -151,6 +151,110 @@ describe('model', function () {
       .expect({food: 'pizza'})
   });
 
+  it('allows functional default', function () {
+    const now = Date.now();
+    withModel({createdAt: {type: 'int', default: () => now}})
+      .request({})
+      .expect({createdAt: now})
+  });
+
+  it('allows a custom validation config', function () {
+    withModel({
+      count: {
+        type: 'int',
+        validation: {
+          isValid: (n) => n < 3,
+          message: (n) => `count must be less than ${n}`
+        }
+      }
+    })
+      .request({query: {count: "2"}})
+      .expect({count: 2})
+
+      .request({query: {count: "7"}})
+      .expectError();
+  });
+
+  it('allows a custom validation config with plain string message', function () {
+    withModel({
+      count: {
+        type: 'int',
+        validation: {
+          isValid: (n) => n < 3,
+          message: "That value is terrible."
+        }
+      }
+    })
+
+      .request({query: {count: "7"}})
+      .expectError();
+  });
+
+  it('allows a functional validation logic', function () {
+    withModel({
+      count: {
+        type: 'int',
+        validation: (n) => n < 3
+      }
+    })
+      .request({query: {count: "2"}})
+      .expect({count: 2})
+
+      .request({query: {count: "7"}})
+      .expectError();
+  });
+
+  it('allows model composition', function () {
+    withModel({
+      ...require('./samples/person.js'),
+      ...require('./samples/address.js')
+    })
+      // All required fields included
+      .request({
+        body: {
+          firstName: 'John',
+          lastName: 'Doe',
+          street1: '1234 Oak Lane',
+          city: 'Somewhere',
+          state: 'OH',
+          postalCode: '12345'
+        }
+      })
+      .expect({
+        firstName: 'John',
+        lastName: 'Doe',
+        street1: '1234 Oak Lane',
+        street2: '',
+        city: 'Somewhere',
+        state: 'OH',
+        postalCode: '12345'
+      })
+
+      // Missing street1
+      .request({
+        body: {
+          firstName: 'John',
+          lastName: 'Doe',
+          city: 'Somewhere',
+          state: 'OH',
+          postalCode: '12345'
+        }
+      })
+      .expectError()
+
+      // Missing person firstName
+      .request({
+        body: {
+          lastName: 'Doe',
+          street1: '1234 Oak Lane',
+          city: 'Somewhere',
+          state: 'OH',
+          postalCode: '12345'
+        }
+      })
+      .expectError();
+  });
+
   /**
    * Helper function that creates and runs the model middleware.
    *
@@ -169,6 +273,9 @@ describe('model', function () {
 
             assert.strictEqual(nextCalls, 1, `Next should have been called once, got ${nextCalls}`);
             assert.deepStrictEqual(req[modelProp], expected, `Expected req.${modelProp} did not match actual`);
+
+            // for chaining test cases with a single model
+            return withModel(definition, modelProp);
           },
 
           expectError: () => {
@@ -188,6 +295,9 @@ describe('model', function () {
 
             assert.strictEqual(nextCalls, 0, `Next should NOT be called when validation fails`);
             assert.strictEqual(statusCode, 400, "Request should have been rejected with status code 400");
+
+            // for chaining test cases with a single model
+            return withModel(definition, modelProp);
           }
         }
       }

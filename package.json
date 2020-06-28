@@ -19,7 +19,8 @@
     "middleware",
     "request",
     "model",
-    "express"
+    "express",
+    "mongoose"
   ],
   "author": "Dan Phifer",
   "license": "ISC",
