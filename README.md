@@ -19,7 +19,7 @@ const model = require('node-request-model');
 
 // Models are declared as middleware. They can be added to any route (GET, POST, etc...) and
 // the results will be stored in the req.model variable by default. 
-app.post('customer/:customer/register',
+app.post('/customer/:customer/register',
   model({
     // shorthand for {type: 'string', required: true}
     customer: 'string', 
@@ -56,7 +56,7 @@ app.post('customer/:customer/register',
 
 // Models are declared as middleware. They can be added to any route (GET, POST, etc...) and
 // the results will be stored in the req.model variable by default. 
-app.get('customer/:customer',
+app.get('/customer/:customer',
   model({customer: 'string'}, 'somethingElse'),
   (req, res) => {
     // The optional second parameter can be used to override which property will hold the 
@@ -103,7 +103,7 @@ In the route, models definitions can be combined using the spread operator.
 Nested models are not supported.   
 
 ```javascript
-app.post('customer/:customer',
+app.post('/customer',
   model({
     ...require('./person.js'),
     ...require('./address.js')
@@ -125,7 +125,7 @@ Functions can be used to specify default values. The function will be evaluated 
 
 ```javascript
 
-app.post('customer',
+app.post('/customer',
   model({
     firstName: 'string',
     lastName: 'string',
