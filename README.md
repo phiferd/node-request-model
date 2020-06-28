@@ -125,7 +125,7 @@ Functions can be used to specify default values. The function will be evaluated 
 
 ```javascript
 
-app.post('customer/:customer',
+app.post('customer',
   model({
     firstName: 'string',
     lastName: 'string',
