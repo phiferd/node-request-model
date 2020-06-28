@@ -33,13 +33,13 @@ describe('model', function () {
   it('throws on invalid definition', function () {
     withModel({customer: 'badType'})
       .request({query: {customer: 'something'}})
-      .expectError();
+      .expectError('Invalid type in node-request-model definition, badType');
   });
 
   it('throws on missing required params', function () {
-    withModel({required: 'string'})
+    withModel({address: 'string'})
       .request({query: {x: 1}})
-      .expectError();
+      .expectError('address is a required parameter');
   });
 
   it('uses defaults', function () {
@@ -142,7 +142,7 @@ describe('model', function () {
   it('does not allow invalid enum values', function () {
     withModel({food: {type: 'string', enum: ['pizza', 'hamburger', 'steak']}})
       .request({body: {food: 'eggs'}})
-      .expectError();
+      .expectError('food was eggs. Must be one of: pizza, hamburger, steak');
   });
 
   it('converts names', function () {
@@ -164,7 +164,7 @@ describe('model', function () {
         type: 'int',
         validation: {
           isValid: (n) => n < 3,
-          message: (n) => `count must be less than ${n}`
+          message: (n) => `count must be less than 3, ${n} >= 3`
         }
       }
     })
@@ -172,7 +172,7 @@ describe('model', function () {
       .expect({count: 2})
 
       .request({query: {count: "7"}})
-      .expectError();
+      .expectError('count must be less than 3, 7 >= 3');
   });
 
   it('allows a custom validation config with plain string message', function () {
@@ -187,7 +187,7 @@ describe('model', function () {
     })
 
       .request({query: {count: "7"}})
-      .expectError();
+      .expectError('That value is terrible.');
   });
 
   it('allows a functional validation logic', function () {
@@ -201,7 +201,7 @@ describe('model', function () {
       .expect({count: 2})
 
       .request({query: {count: "7"}})
-      .expectError();
+      .expectError('count failed validation');
   });
 
   it('allows model composition', function () {
@@ -240,7 +240,7 @@ describe('model', function () {
           postalCode: '12345'
         }
       })
-      .expectError()
+      .expectError('street1 is a required parameter')
 
       // Missing person firstName
       .request({
@@ -252,7 +252,7 @@ describe('model', function () {
           postalCode: '12345'
         }
       })
-      .expectError();
+      .expectError('firstName is a required parameter');
   });
 
   /**
@@ -278,13 +278,15 @@ describe('model', function () {
             return withModel(definition, modelProp);
           },
 
-          expectError: () => {
+          expectError: (msg) => {
             let statusCode = -1;
+            let message = null;
             const res = {
               status: (code) => {
                 statusCode = code;
                 return {
-                  send: () => {
+                  send: (m) => {
+                    message = m;
                   }
                 }
               }
@@ -295,6 +297,7 @@ describe('model', function () {
 
             assert.strictEqual(nextCalls, 0, `Next should NOT be called when validation fails`);
             assert.strictEqual(statusCode, 400, "Request should have been rejected with status code 400");
+            assert.strictEqual(message, msg);
 
             // for chaining test cases with a single model
             return withModel(definition, modelProp);
