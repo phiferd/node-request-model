@@ -3,6 +3,7 @@
   "version": "1.0.5",
   "description": "Node.js / Express middleware to simplify handling requests",
   "main": "index.js",
+  "publishConfig": { "registry": "https://npm.pkg.github.com/" },
   "directories": {
     "lib": "lib"
   },
